@@ -49,8 +49,8 @@ class Renderer(object):
 
         # rasterization
         faces = neural_renderer.vertices_to_faces(vertices, faces)
-        images = neural_renderer.rasterize_silhouettes(faces, self.image_size, self.anti_aliasing)
-        return images
+        images, face_index_map = neural_renderer.rasterize_silhouettes(faces, self.image_size, self.anti_aliasing)
+        return images, face_index_map
 
     def render_depth(self, vertices, faces):
         # fill back
@@ -101,7 +101,7 @@ class Renderer(object):
 
         # rasterization
         faces = neural_renderer.vertices_to_faces(vertices, faces)
-        images = neural_renderer.rasterize(
+        images, face_index_map = neural_renderer.rasterize(
             faces, textures, self.image_size, self.anti_aliasing, self.near, self.far, self.rasterizer_eps,
             self.background_color)
-        return images
+        return images, face_index_map

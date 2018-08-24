@@ -945,11 +945,19 @@ def rasterize_rgbad(
 
     if anti_aliasing:
         # 2x super-sampling
-        rgb, alpha, depth = Rasterize(
-            image_size * 2, near, far, eps, background_color, return_rgb, return_alpha, return_depth)(*inputs)
+        rasterize_obj = Rasterize(
+            image_size * 2, near, far, eps, background_color, return_rgb, return_alpha, return_depth)
+        rgb, alpha, depth = rasterize_obj(*inputs)
     else:
-        rgb, alpha, depth = Rasterize(
-            image_size, near, far, eps, background_color, return_rgb, return_alpha, return_depth)(*inputs)
+        rasterize_obj = Rasterize(
+            image_size, near, far, eps, background_color, return_rgb, return_alpha, return_depth)
+        rgb, alpha, depth = rasterize_obj(*inputs)
+
+    # ---------- TM changes ----------
+    face_index_map_copy = rasterize_obj.face_index_map.copy()
+    # vertically flip face
+    face_index_map_copy = face_index_map_copy[:, ::-1, :]
+    # ---------- END ----------
 
     # transpose & vertical flip
     if return_rgb:
@@ -973,6 +981,7 @@ def rasterize_rgbad(
         'rgb': rgb if return_rgb else None,
         'alpha': alpha if return_alpha else None,
         'depth': depth if return_depth else None,
+        'face_index_map': face_index_map_copy,
     }
 
     return ret
@@ -1005,8 +1014,9 @@ def rasterize(
         ~chainer.Variable: RGB images. The shape is [batch size, 3, image_size, image_size].
 
     """
-    return rasterize_rgbad(
-        faces, textures, image_size, anti_aliasing, near, far, eps, background_color, True, False, False)['rgb']
+    results_dict = rasterize_rgbad(
+            faces, textures, image_size, anti_aliasing, near, far, eps, background_color, True, False, False)
+    return results_dict['rgb'], results_dict['face_index_map']
 
 
 def rasterize_silhouettes(
@@ -1032,7 +1042,9 @@ def rasterize_silhouettes(
         ~chainer.Variable: Alpha channels. The shape is [batch size, image_size, image_size].
 
     """
-    return rasterize_rgbad(faces, None, image_size, anti_aliasing, near, far, eps, None, False, True, False)['alpha']
+    results_dict = rasterize_rgbad(faces, None, image_size, anti_aliasing, near, far, eps, None, False, True, False)
+
+    return results_dict['alpha'], results_dict['face_index_map']
 
 
 def rasterize_depth(
