@@ -3,6 +3,7 @@ import math
 import chainer.functions as cf
 
 import neural_renderer
+import ipdb
 
 
 class Renderer(object):
@@ -49,8 +50,21 @@ class Renderer(object):
 
         # rasterization
         faces = neural_renderer.vertices_to_faces(vertices, faces)
-        images, face_index_map = neural_renderer.rasterize_silhouettes(faces, self.image_size, self.anti_aliasing)
-        return images, face_index_map
+        # ==== TM changes ====
+        results_dict = neural_renderer.rasterize_silhouettes(
+                faces, self.image_size, self.anti_aliasing)
+        masks = results_dict['alpha']
+        face_index_map = results_dict['face_index_map']
+        weight_map = results_dict['weight_map']
+        sampling_weight_map = results_dict['sampling_weight_map']
+        # ==== Making another dictionary (just for clarity) ====
+        return_dict = dict()
+        return_dict['masks'] = masks
+        return_dict['face_index_map'] = face_index_map
+        return_dict['weight_map'] = weight_map
+        return_dict['sampling_weight_map'] = sampling_weight_map
+        return return_dict
+        # ==== End ====
 
     def render_depth(self, vertices, faces):
         # fill back
@@ -101,7 +115,22 @@ class Renderer(object):
 
         # rasterization
         faces = neural_renderer.vertices_to_faces(vertices, faces)
-        images, face_index_map = neural_renderer.rasterize(
-            faces, textures, self.image_size, self.anti_aliasing, self.near, self.far, self.rasterizer_eps,
-            self.background_color)
-        return images, face_index_map
+        # ==== TM changes ====
+        results_dict = neural_renderer.rasterize(
+                faces, textures, self.image_size, self.anti_aliasing, self.near,
+                self.far, self.rasterizer_eps, self.background_color)
+        images = results_dict['rgb']
+        face_index_map = results_dict['face_index_map']
+        weight_map = results_dict['weight_map']
+        sampling_weight_map = results_dict['sampling_weight_map']
+
+        # ==== Making another dictionary (just for clarity) ====
+        return_dict = dict()
+        return_dict['images'] = images
+        return_dict['face_index_map'] = face_index_map
+        return_dict['weight_map'] = weight_map
+        return_dict['sampling_weight_map'] = sampling_weight_map
+        return return_dict
+        # ==== END ====
+
+

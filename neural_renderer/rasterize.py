@@ -3,6 +3,7 @@ import string
 
 import chainer
 import chainer.functions as cf
+import ipdb
 
 DEFAULT_IMAGE_SIZE = 256
 DEFAULT_ANTI_ALIASING = True
@@ -953,11 +954,14 @@ def rasterize_rgbad(
             image_size, near, far, eps, background_color, return_rgb, return_alpha, return_depth)
         rgb, alpha, depth = rasterize_obj(*inputs)
 
-    # ---------- TM changes ----------
+    # ==== TM changes ====
     face_index_map_copy = rasterize_obj.face_index_map.copy()
     # vertically flip face
     face_index_map_copy = face_index_map_copy[:, ::-1, :]
-    # ---------- END ----------
+    # get the weight map
+    weight_map = rasterize_obj.weight_map.copy()
+    sampling_weight_map = rasterize_obj.sampling_weight_map.copy()
+    # ==== END ====
 
     # transpose & vertical flip
     if return_rgb:
@@ -982,6 +986,8 @@ def rasterize_rgbad(
         'alpha': alpha if return_alpha else None,
         'depth': depth if return_depth else None,
         'face_index_map': face_index_map_copy,
+        'weight_map': weight_map,
+        'sampling_weight_map': sampling_weight_map,
     }
 
     return ret
@@ -1016,7 +1022,9 @@ def rasterize(
     """
     results_dict = rasterize_rgbad(
             faces, textures, image_size, anti_aliasing, near, far, eps, background_color, True, False, False)
-    return results_dict['rgb'], results_dict['face_index_map']
+    # ==== TM changes ====
+    return results_dict
+
 
 
 def rasterize_silhouettes(
@@ -1043,8 +1051,9 @@ def rasterize_silhouettes(
 
     """
     results_dict = rasterize_rgbad(faces, None, image_size, anti_aliasing, near, far, eps, None, False, True, False)
-
-    return results_dict['alpha'], results_dict['face_index_map']
+    # ==== TM changes ====
+    return results_dict
+    # return results_dict['alpha'], results_dict['face_index_map'], results_dict['weight_map'], results_dict['sampling_weight_map']
 
 
 def rasterize_depth(
